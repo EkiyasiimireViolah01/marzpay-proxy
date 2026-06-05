@@ -126,7 +126,7 @@ app.post('/collect', verifyProxyKey, async (req, res) => {
           'Authorization': MARZPAY_AUTH,
           'Content-Type': 'application/json'
         },
-        timeout: 90000 // 90 seconds timeout
+        timeout: 90000
       }
     );
 
@@ -196,10 +196,37 @@ app.use((error, req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 MarzPay Proxy Server running on port ${PORT}`);
-  console.log(`📍 Base URL: http://localhost:${PORT}`);
-  console.log(`✅ Health check: http://localhost:${PORT}/health`);
+  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ Server started successfully at ${new Date().toISOString()}`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  console.error('❌ Server error:', error);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('❌ Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Handle unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('📴 SIGTERM received, closing server...');
+  server.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
 });
 
 module.exports = app;
