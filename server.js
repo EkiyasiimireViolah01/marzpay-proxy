@@ -88,7 +88,7 @@ app.post('/verify-phone', verifyProxyKey, async (req, res) => {
     }
 
     const response = await axios.post(
-      `${MARZPAY_BASE_URL}/verify-phone`,
+      `${MARZPAY_BASE_URL}/phone-verification/verify`,
       { phone_number },
       {
         headers: {
@@ -100,7 +100,7 @@ app.post('/verify-phone', verifyProxyKey, async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: response.data
+      data: response.data.data
     });
 
   } catch (error) {
@@ -109,6 +109,62 @@ app.post('/verify-phone', verifyProxyKey, async (req, res) => {
     res.status(error.response?.status || 500).json({
       success: false,
       message: error.response?.data?.message || 'Phone verification failed',
+      error: error.message
+    });
+  }
+});
+
+// Send money (withdrawal/disbursement)
+app.post('/send-money', verifyProxyKey, async (req, res) => {
+  try {
+    const { phone_number, amount, country, reference, description, recipient_name } = req.body;
+
+    // Validation
+    if (!phone_number || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number and amount are required'
+      });
+    }
+
+    if (amount < 1000) {
+      return res.status(400).json({
+        success: false,
+        message: 'Minimum amount is UGX 1,000'
+      });
+    }
+
+    // Call MarzPay Send Money API
+    const response = await axios.post(
+      `${MARZPAY_BASE_URL}/send-money`,
+      {
+        phone_number,
+        amount: parseInt(amount),
+        country: country || 'UG',
+        reference: reference || `WD_${Date.now()}`,
+        description: description || 'Divine Canteen Withdrawal',
+        recipient_name: recipient_name || 'Admin'
+      },
+      {
+        headers: {
+          'Authorization': MARZPAY_AUTH,
+          'Content-Type': 'application/json'
+        },
+        timeout: 90000
+      }
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: response.data
+    });
+
+  } catch (error) {
+    console.error('Send money error:', error.response?.data || error.message);
+    
+    res.status(error.response?.status || 500).json({
+      status: 'failed',
+      message: error.response?.data?.message || 'Send money failed',
       error: error.message
     });
   }
