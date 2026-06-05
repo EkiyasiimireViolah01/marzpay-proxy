@@ -6,16 +6,28 @@
  * @date June 5, 2026
  */
 
+console.log('🔄 Starting MarzPay Proxy Server...');
+console.log('📦 Loading dependencies...');
+
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 
+console.log('✅ Dependencies loaded successfully');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+console.log(`🔧 Configuration:`);
+console.log(`   - Port: ${PORT}`);
+console.log(`   - Node Version: ${process.version}`);
+console.log(`   - Environment: ${process.env.NODE_ENV || 'development'}`);
+
 // Middleware
+console.log('🔧 Setting up middleware...');
 app.use(cors());
 app.use(express.json());
+console.log('✅ Middleware configured');
 
 // MarzPay API Configuration (Your actual credentials)
 const MARZPAY_BASE_URL = 'https://api.marzpay.io';
@@ -200,33 +212,57 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 MarzPay Proxy Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`✅ Server started successfully at ${new Date().toISOString()}`);
+  console.log(`🌐 Server is ready to accept connections`);
 });
 
 // Handle server errors
 server.on('error', (error) => {
-  console.error('❌ Server error:', error);
-  process.exit(1);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use`);
+  } else {
+    console.error('❌ Server error:', error);
+  }
+  // Don't exit immediately - let Render handle it
+  setTimeout(() => process.exit(1), 1000);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error);
-  process.exit(1);
+  // Don't exit immediately
+  setTimeout(() => process.exit(1), 1000);
 });
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-  process.exit(1);
+  // Don't exit - just log it
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('📴 SIGTERM received, closing server...');
   server.close(() => {
-    console.log('✅ Server closed');
+    console.log('✅ Server closed gracefully');
     process.exit(0);
   });
 });
+
+// Keep process alive
+process.on('SIGINT', () => {
+  console.log('📴 SIGINT received, closing server...');
+  server.close(() => {
+    console.log('✅ Server closed gracefully');
+    process.exit(0);
+  });
+});
+
+// Log that we're staying alive
+setInterval(() => {
+  // This keeps the process alive and logs heartbeat
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`💓 Server heartbeat at ${new Date().toISOString()}`);
+  }
+}, 300000); // Every 5 minutes
 
 module.exports = app;
