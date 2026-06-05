@@ -57,6 +57,24 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Root endpoint - Welcome message
+app.get('/', (req, res) => {
+  res.status(200).json({
+    service: 'MarzPay Proxy for Divine Canteen',
+    status: 'online',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      verifyPhone: 'POST /verify-phone',
+      collect: 'POST /collect',
+      status: 'GET /status/:uuid'
+    },
+    message: 'Server is running successfully!',
+    developer: 'Ekiyasiimire Violah (23/BSU/BIT/1319)',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Verify phone number
 app.post('/verify-phone', verifyProxyKey, async (req, res) => {
   try {
