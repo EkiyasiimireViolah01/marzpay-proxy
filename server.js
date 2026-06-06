@@ -296,7 +296,7 @@ app.get('/status/:uuid', verifyProxyKey, async (req, res) => {
       }
     );
 
-    console.log(`[Status] Result:`, response.data);
+    console.log(`[Status] MarzPay Response:`, JSON.stringify(response.data, null, 2));
 
     res.status(200).json({
       success: true,
