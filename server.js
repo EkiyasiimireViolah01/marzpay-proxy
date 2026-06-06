@@ -75,12 +75,35 @@ app.get('/', (req, res) => {
       health: '/health',
       verifyPhone: 'POST /verify-phone',
       collect: 'POST /collect',
-      status: 'GET /status/:uuid'
+      status: 'GET /status/:uuid',
+      myip: 'GET /myip'
     },
     message: 'Server is running successfully!',
     developer: 'Ekiyasiimire Violah (23/BSU/BIT/1319)',
     timestamp: new Date().toISOString()
   });
+});
+
+// Get server's public IP - to help whitelist in MarzPay
+app.get('/myip', async (req, res) => {
+  try {
+    // Call ipify to get our public IP
+    const response = await axios.get('https://api.ipify.org?format=json');
+    const publicIP = response.data.ip;
+    
+    console.log(`[MyIP] Server public IP: ${publicIP}`);
+    
+    res.status(200).json({
+      ip: publicIP,
+      message: 'Whitelist this IP in MarzPay dashboard',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Could not determine public IP',
+      message: error.message
+    });
+  }
 });
 
 // Verify phone number
@@ -212,6 +235,7 @@ app.post('/collect', verifyProxyKey, async (req, res) => {
     }
 
     console.log(`[Collect] Processing: ${amount} UGX from ${phone_number}`);
+    console.log(`[Collect] Calling: ${MARZPAY_BASE_URL}/collect-money`);
 
     // Call MarzPay API - CORRECT endpoint is /collect-money
     const response = await axios.post(
@@ -237,12 +261,16 @@ app.post('/collect', verifyProxyKey, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[Collect] Error:', error.response?.status, error.response?.data || error.message);
+    console.error('[Collect] Error Status:', error.response?.status);
+    console.error('[Collect] Error Data:', error.response?.data);
+    console.error('[Collect] Error Message:', error.message);
     
+    // Return the full error details so you can see the IP issue
     res.status(error.response?.status || 500).json({
       status: 'failed',
       message: error.response?.data?.message || 'Payment collection failed',
-      error: error.message
+      error: error.message,
+      fullError: error.response?.data
     });
   }
 });
