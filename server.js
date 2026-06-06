@@ -6,34 +6,41 @@
  * @date June 5, 2026
  */
 
-console.log('🔄 Starting MarzPay Proxy Server...');
-console.log('📦 Loading dependencies...');
+console.log('Starting MarzPay Proxy Server...');
+console.log('Loading dependencies...');
 
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 
-console.log('✅ Dependencies loaded successfully');
+console.log('Dependencies loaded successfully');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-console.log(`🔧 Configuration:`);
-console.log(`   - Port: ${PORT}`);
-console.log(`   - Node Version: ${process.version}`);
-console.log(`   - Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log('Configuration:');
+console.log('   - Port: ${PORT}');
+console.log('   - Node Version: ${process.version}');
+console.log('   - Environment: ${process.env.NODE_ENV || 'development'}');
 
 // Middleware
-console.log('🔧 Setting up middleware...');
+console.log('Setting up middleware...');
 app.use(cors());
 app.use(express.json());
-console.log('✅ Middleware configured');
+console.log('Middleware configured');
 
 // MarzPay API Configuration (Your actual credentials)
-const MARZPAY_BASE_URL = 'https://api.marzpay.io';
-const MARZPAY_API_KEY = 'marz_SNgY0tpoQUpY5Zch';
-const MARZPAY_API_SECRET = 'wHEgSOIaR8BR3L05v6VEPqs10NdWMg58';
+const MARZPAY_BASE_URL = 'https://wallet.wearemarz.com/api/v1';
+const MARZPAY_AUTH = 'Basic bWFyel9TTmdZMHRwb1FVcFk1WmNoOndIRWdTT0lhUjhCUjNMMDV2NlZFUHFzMTBOZFdNZzU4';
 const PROXY_KEY = 'menugo_divine_canteen_2025';
+
+// Shared headers for MarzPay
+const marzHeaders = {
+  'Authorization': MARZPAY_AUTH,
+  'Content-Type': 'application/json',
+  'Accept': 'application/json',
+  'Cache-Control': 'no-cache',
+};
 
 // Middleware to verify proxy key
 const verifyProxyKey = (req, res, next) => {
@@ -89,16 +96,12 @@ app.post('/verify-phone', verifyProxyKey, async (req, res) => {
     }
 
     console.log(`[PhoneVerify] Verifying: ${phone_number}`);
-    console.log(`[PhoneVerify] Using API Key: ${MARZPAY_API_KEY.substring(0, 10)}...`);
 
     const response = await axios.post(
       `${MARZPAY_BASE_URL}/phone-verification/verify`,
       { phone_number },
       {
-        headers: {
-          'x-api-key': MARZPAY_API_KEY,
-          'Content-Type': 'application/json'
-        },
+        headers: marzHeaders,
         timeout: 30000
       }
     );
@@ -158,10 +161,7 @@ app.post('/send-money', verifyProxyKey, async (req, res) => {
         recipient_name: recipient_name || 'Admin'
       },
       {
-        headers: {
-          'x-api-key': MARZPAY_API_KEY,
-          'Content-Type': 'application/json'
-        },
+        headers: marzHeaders,
         timeout: 90000
       }
     );
@@ -213,9 +213,9 @@ app.post('/collect', verifyProxyKey, async (req, res) => {
 
     console.log(`[Collect] Processing: ${amount} UGX from ${phone_number}`);
 
-    // Call MarzPay API
+    // Call MarzPay API - CORRECT endpoint is /collect-money
     const response = await axios.post(
-      `${MARZPAY_BASE_URL}/collections`,
+      `${MARZPAY_BASE_URL}/collect-money`,
       {
         phone_number,
         amount: parseInt(amount),
@@ -224,10 +224,7 @@ app.post('/collect', verifyProxyKey, async (req, res) => {
         description: description || 'Divine Canteen Order'
       },
       {
-        headers: {
-          'x-api-key': MARZPAY_API_KEY,
-          'Content-Type': 'application/json'
-        },
+        headers: marzHeaders,
         timeout: 90000
       }
     );
@@ -267,10 +264,7 @@ app.get('/status/:uuid', verifyProxyKey, async (req, res) => {
     const response = await axios.get(
       `${MARZPAY_BASE_URL}/transactions/${uuid}`,
       {
-        headers: {
-          'x-api-key': MARZPAY_API_KEY,
-          'Content-Type': 'application/json'
-        }
+        headers: marzHeaders
       }
     );
 
@@ -305,18 +299,18 @@ app.use((error, req, res, next) => {
 
 // Start server
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 MarzPay Proxy Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ Server started successfully at ${new Date().toISOString()}`);
-  console.log(`🌐 Server is ready to accept connections`);
+  console.log(`MarzPay Proxy Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Server started successfully at ${new Date().toISOString()}`);
+  console.log(`Server is ready to accept connections`);
 });
 
 // Handle server errors
 server.on('error', (error) => {
   if (error.code === 'EADDRINUSE') {
-    console.error(`❌ Port ${PORT} is already in use`);
+    console.error(`Port ${PORT} is already in use`);
   } else {
-    console.error('❌ Server error:', error);
+    console.error('Server error:', error);
   }
   // Don't exit immediately - let Render handle it
   setTimeout(() => process.exit(1), 1000);
@@ -324,31 +318,31 @@ server.on('error', (error) => {
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-  console.error('❌ Uncaught Exception:', error);
+  console.error('Uncaught Exception:', error);
   // Don't exit immediately
   setTimeout(() => process.exit(1), 1000);
 });
 
 // Handle unhandled rejections
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   // Don't exit - just log it
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('📴 SIGTERM received, closing server...');
+  console.log('SIGTERM received, closing server...');
   server.close(() => {
-    console.log('✅ Server closed gracefully');
+    console.log('Server closed gracefully');
     process.exit(0);
   });
 });
 
 // Keep process alive
 process.on('SIGINT', () => {
-  console.log('📴 SIGINT received, closing server...');
+  console.log('SIGINT received, closing server...');
   server.close(() => {
-    console.log('✅ Server closed gracefully');
+    console.log('Server closed gracefully');
     process.exit(0);
   });
 });
@@ -357,7 +351,7 @@ process.on('SIGINT', () => {
 setInterval(() => {
   // This keeps the process alive and logs heartbeat
   if (process.env.NODE_ENV !== 'production') {
-    console.log(`💓 Server heartbeat at ${new Date().toISOString()}`);
+    console.log(`Server heartbeat at ${new Date().toISOString()}`);
   }
 }, 300000); // Every 5 minutes
 
