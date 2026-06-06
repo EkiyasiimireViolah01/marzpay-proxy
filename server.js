@@ -89,6 +89,7 @@ app.post('/verify-phone', verifyProxyKey, async (req, res) => {
     }
 
     console.log(`[PhoneVerify] Verifying: ${phone_number}`);
+    console.log(`[PhoneVerify] Using API Key: ${MARZPAY_API_KEY.substring(0, 10)}...`);
 
     const response = await axios.post(
       `${MARZPAY_BASE_URL}/phone-verification/verify`,
@@ -110,12 +111,15 @@ app.post('/verify-phone', verifyProxyKey, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('[PhoneVerify] Error:', error.response?.status, error.response?.data || error.message);
+    console.error('[PhoneVerify] Error Status:', error.response?.status);
+    console.error('[PhoneVerify] Error Data:', error.response?.data);
+    console.error('[PhoneVerify] Error Message:', error.message);
     
     res.status(error.response?.status || 500).json({
       success: false,
       message: error.response?.data?.message || 'Phone verification failed',
-      error: error.message
+      error: error.message,
+      details: error.response?.data
     });
   }
 });
