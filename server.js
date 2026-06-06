@@ -31,7 +31,8 @@ console.log('✅ Middleware configured');
 
 // MarzPay API Configuration (Your actual credentials)
 const MARZPAY_BASE_URL = 'https://api.marzpay.io';
-const MARZPAY_AUTH = 'Basic bWFyel9TTmdZMHRwb1FVcFk1WmNoOndIRWdTT0lhUjhCUjNMMDV2NlZFUHFzMTBOZFdNZzU4';
+const MARZPAY_API_KEY = 'marz_SNgY0tpoQUpY5Zch';
+const MARZPAY_API_SECRET = 'wHEgSOIaR8BR3L05v6VEPqs10NdWMg58';
 const PROXY_KEY = 'menugo_divine_canteen_2025';
 
 // Middleware to verify proxy key
@@ -87,16 +88,21 @@ app.post('/verify-phone', verifyProxyKey, async (req, res) => {
       });
     }
 
+    console.log(`[PhoneVerify] Verifying: ${phone_number}`);
+
     const response = await axios.post(
       `${MARZPAY_BASE_URL}/phone-verification/verify`,
       { phone_number },
       {
         headers: {
-          'Authorization': MARZPAY_AUTH,
+          'x-api-key': MARZPAY_API_KEY,
           'Content-Type': 'application/json'
-        }
+        },
+        timeout: 30000
       }
     );
+
+    console.log(`[PhoneVerify] Success:`, response.data);
 
     res.status(200).json({
       success: true,
@@ -104,7 +110,7 @@ app.post('/verify-phone', verifyProxyKey, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Phone verification error:', error.response?.data || error.message);
+    console.error('[PhoneVerify] Error:', error.response?.status, error.response?.data || error.message);
     
     res.status(error.response?.status || 500).json({
       success: false,
@@ -134,6 +140,8 @@ app.post('/send-money', verifyProxyKey, async (req, res) => {
       });
     }
 
+    console.log(`[SendMoney] Processing: ${amount} UGX to ${phone_number}`);
+
     // Call MarzPay Send Money API
     const response = await axios.post(
       `${MARZPAY_BASE_URL}/send-money`,
@@ -147,12 +155,14 @@ app.post('/send-money', verifyProxyKey, async (req, res) => {
       },
       {
         headers: {
-          'Authorization': MARZPAY_AUTH,
+          'x-api-key': MARZPAY_API_KEY,
           'Content-Type': 'application/json'
         },
         timeout: 90000
       }
     );
+
+    console.log(`[SendMoney] Success:`, response.data);
 
     res.status(200).json({
       status: 'success',
@@ -160,7 +170,7 @@ app.post('/send-money', verifyProxyKey, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Send money error:', error.response?.data || error.message);
+    console.error('[SendMoney] Error:', error.response?.status, error.response?.data || error.message);
     
     res.status(error.response?.status || 500).json({
       status: 'failed',
@@ -197,6 +207,8 @@ app.post('/collect', verifyProxyKey, async (req, res) => {
       });
     }
 
+    console.log(`[Collect] Processing: ${amount} UGX from ${phone_number}`);
+
     // Call MarzPay API
     const response = await axios.post(
       `${MARZPAY_BASE_URL}/collections`,
@@ -209,12 +221,14 @@ app.post('/collect', verifyProxyKey, async (req, res) => {
       },
       {
         headers: {
-          'Authorization': MARZPAY_AUTH,
+          'x-api-key': MARZPAY_API_KEY,
           'Content-Type': 'application/json'
         },
         timeout: 90000
       }
     );
+
+    console.log(`[Collect] Success:`, response.data);
 
     res.status(200).json({
       status: 'success',
@@ -222,7 +236,7 @@ app.post('/collect', verifyProxyKey, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Payment collection error:', error.response?.data || error.message);
+    console.error('[Collect] Error:', error.response?.status, error.response?.data || error.message);
     
     res.status(error.response?.status || 500).json({
       status: 'failed',
@@ -244,15 +258,19 @@ app.get('/status/:uuid', verifyProxyKey, async (req, res) => {
       });
     }
 
+    console.log(`[Status] Checking: ${uuid}`);
+
     const response = await axios.get(
       `${MARZPAY_BASE_URL}/transactions/${uuid}`,
       {
         headers: {
-          'Authorization': MARZPAY_AUTH,
+          'x-api-key': MARZPAY_API_KEY,
           'Content-Type': 'application/json'
         }
       }
     );
+
+    console.log(`[Status] Result:`, response.data);
 
     res.status(200).json({
       success: true,
@@ -260,7 +278,7 @@ app.get('/status/:uuid', verifyProxyKey, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Status check error:', error.response?.data || error.message);
+    console.error('[Status] Error:', error.response?.status, error.response?.data || error.message);
     
     res.status(error.response?.status || 500).json({
       success: false,
