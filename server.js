@@ -18,10 +18,10 @@ console.log('Dependencies loaded successfully');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-console.log('Configuration:');
-console.log('   - Port: ${PORT}');
-console.log('   - Node Version: ${process.version}');
-console.log('   - Environment: ${process.env.NODE_ENV || 'development'}');
+console.log(`Configuration:`);
+console.log(`   - Port: ${PORT}`);
+console.log(`   - Node Version: ${process.version}`);
+console.log(`   - Environment: ${process.env.NODE_ENV || 'development'}`);
 
 // Middleware
 console.log('Setting up middleware...');
